@@ -20,7 +20,10 @@ same rubric; keep the two in sync when the team changes a factor.
    when escalation is blocked.
 5. Route with `route-owner`. Name the owning team or say it cannot be
    determined yet.
-6. Draft the triage summary. A human confirms before any write.
+6. Check the reporter's graph history with `graph-context`. Other reports
+   by the same reporter can show a repeat pattern — mention them, but never
+   treat them as duplicates on their own; only `find-duplicates` decides that.
+7. Draft the triage summary. A human confirms before any write.
 
 ## The rubric (see references/rubric.md for the full tables)
 
@@ -50,5 +53,6 @@ This skill uses the app's own read-only GET actions:
 - `score-severity`
 - `missing-evidence`
 - `route-owner`
+- `graph-context`
 
-All five are also exposed over the app's MCP server (`repro-mcp`).
+All six are also exposed over the app's MCP server (`repro-mcp`).

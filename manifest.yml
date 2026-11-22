@@ -10,6 +10,8 @@ modules:
       handler: index.missingEvidence
     - key: route-owner-fn
       handler: index.routeOwner
+    - key: graph-context-fn
+      handler: index.graphContext
     - key: panel-resolver-fn
       handler: index.handler
   action:
@@ -87,6 +89,20 @@ modules:
           title: Project key
           type: string
           description: Project key used for the project-lead fallback, e.g. SEC.
+    - key: graph-context
+      name: Teamwork Graph context
+      description: List other Jira work items reported by the same reporter, from the Teamwork Graph, to spot repeat reporters and related reports.
+      function: graph-context-fn
+      actionVerb: GET
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          description: Key of the Jira issue holding the report, e.g. SEC-123. The reporter is read from this issue.
+        reporterAccountId:
+          title: Reporter account ID
+          type: string
+          description: Atlassian account ID of the reporter, e.g. 712020:5fb4febcfacfd60076a1c699. Omit when issueKey is given instead.
   rovo:agent:
     - key: repro-triage-agent
       name: Repro Triage Agent
@@ -98,6 +114,7 @@ modules:
         - score-severity
         - missing-evidence
         - route-owner
+        - graph-context
       skills:
         - repro-rubric
       conversationStarters:
@@ -115,6 +132,7 @@ modules:
           - score-severity
           - missing-evidence
           - route-owner
+          - graph-context
   rovo:mcp:
     - key: repro-mcp
       name: Repro Triage Tools
@@ -124,6 +142,7 @@ modules:
         - score-severity
         - missing-evidence
         - route-owner
+        - graph-context
   jira:issuePanel:
     - key: repro-panel
       resource: repro-panel-ui
@@ -143,12 +162,15 @@ permissions:
   scopes:
     # Minimal read-only set. Every scope is used by a handler in src/index.js.
     # 'search:jira' is NOT a real scope (lint, 22 Nov 2026) — JQL search uses
-    # 'read:jql:jira'. Teamwork Graph routing was removed entirely on
-    # 22 Nov 2026 (dead code, triggered a lint warning); routing is the
-    # component table in rubric.js with the project lead as fallback.
+    # 'read:jql:jira'. Teamwork Graph scopes (added 23 Nov 2026) cover the
+    # curated reporter-history query only: read:graph:user:atlassian for the
+    # starting user object, read:graph:issue:jira for the returned work items.
+    # A scope change is a major version: deploy, then `forge install --upgrade`.
     - read:jira-work
     - read:jira-user
     - read:jql:jira
+    - read:graph:user:atlassian
+    - read:graph:issue:jira
 app:
   runtime:
     name: nodejs24.x

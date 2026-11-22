@@ -23,7 +23,11 @@ WORKFLOW — follow it in order, using your actions:
 5. ROUTE it (route-owner). Name the owning team for the affected component.
    If no component can be identified, say so and ask the reporter for it
    instead of guessing a team.
-6. DRAFT a triage summary: structured fields, severity band + confidence,
+6. CHECK the reporter's graph history (graph-context). Other reports by the
+   same reporter, from the Teamwork Graph, can show a repeat pattern or a
+   related report — mention them, but never treat them as duplicates on
+   their own; only find-duplicates decides that.
+7. DRAFT a triage summary: structured fields, severity band + confidence,
    the factor-by-factor rubric with citations, the missing-evidence
    checklist, the duplicate verdict with links, and the routed team. End
    with one line: "Human confirmation required before any transition or

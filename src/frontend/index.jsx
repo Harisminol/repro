@@ -64,6 +64,20 @@ function App() {
           ))
         )}
       </Box>
+      <Box>
+        <Heading as="h4">Teamwork Graph — reporter history</Heading>
+        {result.graph?.available ? (
+          result.graph.items.length === 0 ? (
+            <Text>No other reports by {result.graph.reporterName || 'this reporter'}.</Text>
+          ) : (
+            result.graph.items.map((it) => (
+              <Text key={it.id || it.title}>• {it.title}{it.status ? ` (${it.status})` : ''}</Text>
+            ))
+          )
+        ) : (
+          <Text>Teamwork Graph context unavailable ({result.graph?.error || 'unknown reason'}).</Text>
+        )}
+      </Box>
       <Text>
         Routing: {result.routing.team ? `owning team ${result.routing.team}` : 'no owning team yet'} ({result.routing.source}).
       </Text>

@@ -172,3 +172,48 @@ test('adfToText flattens an issue description', () => {
   assert.equal(adfToText('plain string'), 'plain string');
   assert.equal(adfToText(null), '');
 });
+
+// --- Teamwork Graph response parsing (src/twg.mjs). No Forge, no network.
+import { parseReporterWork, userAri, REPORTER_WORK_OPERATION } from '../src/twg.mjs';
+
+test('twg: operation name follows the company_operation rule', () => {
+  const [company, op] = REPORTER_WORK_OPERATION.split('_');
+  assert.ok(company.length >= 3);
+  assert.ok(op.length >= 4);
+});
+
+test('twg: userAri builds the identity ARI', () => {
+  assert.equal(userAri('712020:abc'), 'ari:cloud:identity::user/712020:abc');
+});
+
+test('twg: parseReporterWork extracts items and page info', () => {
+  const json = {
+    data: {
+      atlassianUserReportedJiraWorkItems: {
+        edges: [
+          { node: { id: 'ari:cloud:jira:x:issue/10001', title: 'Avatar upload SSRF', status: { name: 'To Do' } } },
+          { node: { id: 'ari:cloud:jira:x:issue/10002', title: 'Login bypass', status: { name: 'To Do' } } },
+          { node: { id: 'ari:cloud:jira:x:issue/10003', title: 'Checkout currency', status: null } },
+        ],
+        pageInfo: { hasNextPage: false, endCursor: null },
+      },
+    },
+  };
+  const parsed = parseReporterWork(json);
+  assert.equal(parsed.items.length, 3);
+  assert.equal(parsed.items[0].title, 'Avatar upload SSRF');
+  assert.equal(parsed.items[0].status, 'To Do');
+  assert.equal(parsed.items[2].status, null);
+  assert.equal(parsed.hasNextPage, false);
+});
+
+test('twg: parseReporterWork tolerates empty and error shapes', () => {
+  assert.deepEqual(parseReporterWork(null).items, []);
+  assert.deepEqual(parseReporterWork({}).items, []);
+  assert.deepEqual(parseReporterWork({ data: { atlassianUserReportedJiraWorkItems: { edges: [] } } }).items, []);
+  const err = parseReporterWork({ errors: [{ message: 'missing scope' }] });
+  assert.deepEqual(err.items, []);
+  assert.match(err.reason, /missing scope/);
+  const noTitle = parseReporterWork({ data: { atlassianUserReportedJiraWorkItems: { edges: [{ node: { id: 'x' } }] } } });
+  assert.deepEqual(noTitle.items, []);
+});

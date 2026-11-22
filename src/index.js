@@ -9,10 +9,12 @@
 // the action inputs; getInput() also checks payload/input wrappers so the
 // handlers stay robust across invocation paths).
 //
-// Teamwork Graph routing was REMOVED on 22 Nov 2026: the hook was dead code
-// behind a disabled flag and its mere presence triggered a forge lint
-// warning (teamwork-graph-scopes). Routing is the component->team table in
-// rubric.js, with the project lead as fallback.
+// Teamwork Graph context is live again (23 Nov 2026) as the read-only
+// `graph-context` action + panel section: the reporter's other reported
+// work items, via the curated `atlassianUserReportedJiraWorkItems` query
+// (src/twg.mjs). It enriches triage, never drives routing — routing stays
+// the component->team table in rubric.js, with the project lead as fallback.
+// A graph failure is reported as unavailable, never a panel error.
 
 import api, { route } from '@forge/api';
 import _Resolver from '@forge/resolver';
@@ -23,6 +25,7 @@ import _Resolver from '@forge/resolver';
 const Resolver = _Resolver.default ?? _Resolver;
 import { adfToText, findDuplicates as scoreDuplicates, missingEvidence as listMissingEvidence, parseReport as parseReportText, scoreSeverity as scoreReportSeverity, triageReport } from './triage.mjs';
 import { COMPONENT_TEAMS } from './rubric.mjs';
+import { fetchReporterWork } from './twg.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,7 +40,7 @@ function getInput(event, name) {
 }
 
 async function fetchIssue(issueKey) {
-  const res = await api.asUser().requestJira(route`/rest/api/3/issue/${issueKey}?fields=summary,description,components,labels,project`);
+  const res = await api.asUser().requestJira(route`/rest/api/3/issue/${issueKey}?fields=summary,description,components,labels,project,reporter`);
   if (!res.ok) throw new Error(`Failed to fetch issue ${issueKey}: HTTP ${res.status}`);
   return res.json();
 }
@@ -164,6 +167,36 @@ export async function routeOwner(event) {
   return { component: resolvedComponent, team: null, source: 'unknown', reason: 'No component could be identified, so no owning team can be routed to yet. Ask the reporter for the affected component.' };
 }
 
+// Teamwork Graph context: other work items reported by the same reporter,
+// so triage can spot repeat reporters and related reports. Read-only and
+// best-effort — a graph failure returns available: false, never a throw.
+export async function graphContext(event) {
+  const issueKey = getInput(event, 'issueKey');
+  const reporterAccountId = getInput(event, 'reporterAccountId');
+  let reporter = null;
+  let issue = null;
+  if (reporterAccountId) {
+    reporter = { accountId: String(reporterAccountId), displayName: null };
+  } else if (issueKey) {
+    issue = await fetchIssue(String(issueKey));
+    reporter = issue.fields?.reporter || null;
+  } else {
+    throw new Error('Provide issueKey or reporterAccountId.');
+  }
+  if (!reporter?.accountId) return { issueKey: issueKey || null, reporter: null, available: false, items: [], error: 'no reporter on issue' };
+  const result = await fetchReporterWork(api, reporter.accountId);
+  const currentTitle = issue?.fields?.summary || null;
+  const items = result.items.filter((it) => it.title !== currentTitle);
+  return {
+    issueKey: issueKey || null,
+    reporter: { displayName: reporter.displayName || null, accountId: reporter.accountId },
+    available: result.available,
+    items,
+    otherCount: items.length,
+    error: result.error || null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Issue panel resolver (UI Kit 2)
 // ---------------------------------------------------------------------------
@@ -177,6 +210,21 @@ resolver.define('getTriage', async ({ payload }) => {
   const text = issueText(issue);
   const candidates = await searchCandidates(parseReportText(text));
   const report = triageReport(text, candidates, String(issueKey));
+  // Teamwork Graph context is best-effort: a graph failure must never
+  // break the panel, so it is caught and reported as unavailable.
+  let graph = { available: false, items: [], error: 'not attempted' };
+  try {
+    const reporter = issue.fields?.reporter;
+    if (reporter?.accountId) {
+      const result = await fetchReporterWork(api, reporter.accountId);
+      const items = result.items.filter((it) => it.title !== (issue.fields?.summary || ''));
+      graph = { available: result.available, reporterName: reporter.displayName || null, items, error: result.error || null };
+    } else {
+      graph = { available: false, items: [], error: 'no reporter on issue' };
+    }
+  } catch (err) {
+    graph = { available: false, items: [], error: err?.message || String(err) };
+  }
   return {
     issueKey: String(issueKey),
     summary: issue.fields?.summary || '',
@@ -190,6 +238,7 @@ resolver.define('getTriage', async ({ payload }) => {
     missing: report.missing,
     duplicates: report.duplicates,
     routing: report.routing,
+    graph,
   };
 });
 
