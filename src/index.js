@@ -185,8 +185,7 @@ export async function graphContext(event) {
   }
   if (!reporter?.accountId) return { issueKey: issueKey || null, reporter: null, available: false, items: [], error: 'no reporter on issue' };
   const result = await fetchReporterWork(api, reporter.accountId);
-  const currentTitle = issue?.fields?.summary || null;
-  const items = result.items.filter((it) => it.title !== currentTitle);
+  const items = result.items.filter((it) => it.key !== (issue?.key || null));
   return {
     issueKey: issueKey || null,
     reporter: { displayName: reporter.displayName || null, accountId: reporter.accountId },
@@ -221,7 +220,7 @@ resolver.define('getTriage', async ({ payload }) => {
     const reporter = issue.fields?.reporter;
     if (reporter?.accountId) {
       const result = await fetchReporterWork(api, reporter.accountId);
-      const items = result.items.filter((it) => it.title !== (issue.fields?.summary || ''));
+      const items = result.items.filter((it) => it.key !== String(issueKey));
       const failed = !result.available || (typeof result.error === 'string' && /^(graph error:|HTTP|empty response)/.test(result.error));
       console.log(`[repro twg] issue=${issueKey} reporter=${reporter.accountId} available=${result.available} rawItems=${result.items.length} shownItems=${items.length} error=${result.error || 'none'}`);
       graph = failed

@@ -191,9 +191,9 @@ test('twg: parseReporterWork extracts items and page info', () => {
     data: {
       atlassianUserReportedJiraWorkItems: {
         edges: [
-          { node: { id: 'ari:cloud:jira:x:issue/10001', title: 'Avatar upload SSRF', status: { name: 'To Do' } } },
-          { node: { id: 'ari:cloud:jira:x:issue/10002', title: 'Login bypass', status: { name: 'To Do' } } },
-          { node: { id: 'ari:cloud:jira:x:issue/10003', title: 'Checkout currency', status: null } },
+          { node: { id: 'ari:cloud:jira:x:issue/10001', key: 'SEC-1', summary: 'Avatar upload SSRF', status: { name: 'To Do' } } },
+          { node: { id: 'ari:cloud:jira:x:issue/10002', key: 'SEC-2', summary: 'Login bypass', status: { name: 'To Do' } } },
+          { node: { id: 'ari:cloud:jira:x:issue/10003', key: 'SEC-3', summary: 'Checkout currency', status: null } },
         ],
         pageInfo: { hasNextPage: false, endCursor: null },
       },
@@ -201,6 +201,7 @@ test('twg: parseReporterWork extracts items and page info', () => {
   };
   const parsed = parseReporterWork(json);
   assert.equal(parsed.items.length, 3);
+  assert.equal(parsed.items[0].key, 'SEC-1');
   assert.equal(parsed.items[0].title, 'Avatar upload SSRF');
   assert.equal(parsed.items[0].status, 'To Do');
   assert.equal(parsed.items[2].status, null);
@@ -214,11 +215,17 @@ test('twg: parseReporterWork tolerates empty and error shapes', () => {
   const err = parseReporterWork({ errors: [{ message: 'missing scope' }] });
   assert.deepEqual(err.items, []);
   assert.match(err.reason, /missing scope/);
-  const noTitle = parseReporterWork({ data: { atlassianUserReportedJiraWorkItems: { edges: [{ node: { id: 'x' } }] } } });
-  assert.deepEqual(noTitle.items, []);
+  const noSummary = parseReporterWork({ data: { atlassianUserReportedJiraWorkItems: { edges: [{ node: { id: 'x', key: 'SEC-9' } }] } } });
+  assert.deepEqual(noSummary.items, []);
 });
 
 test('twg: query selects __typename so the node type is visible', () => {
   assert.ok(REPORTER_WORK_QUERY.includes('__typename'));
   assert.ok(REPORTER_WORK_QUERY.includes('atlassianUserReportedJiraWorkItems'));
+});
+
+test('twg: query uses summary/key, never title (live schema has no title on JiraWorkItem)', () => {
+  assert.ok(REPORTER_WORK_QUERY.includes('summary'));
+  assert.ok(REPORTER_WORK_QUERY.includes('key'));
+  assert.ok(!REPORTER_WORK_QUERY.includes('title'));
 });

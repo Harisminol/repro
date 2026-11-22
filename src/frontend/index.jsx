@@ -71,7 +71,7 @@ function App() {
             <Text>No other reports by {result.graph.reporterName || 'this reporter'}.</Text>
           ) : (
             result.graph.items.map((it) => (
-              <Text key={it.id || it.title}>• {it.title}{it.status ? ` (${it.status})` : ''}</Text>
+              <Text key={it.id || it.key || it.title}>• {it.key ? `${it.key}: ` : ''}{it.title}{it.status ? ` (${it.status})` : ''}</Text>
             ))
           )
         ) : (

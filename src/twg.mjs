@@ -19,7 +19,8 @@ export const REPORTER_WORK_QUERY = `query repro_reporterWork($userId: ID!) {
         __typename
         ... on JiraWorkItem {
           id
-          title
+          key
+          summary
           status {
             name
           }
@@ -51,8 +52,12 @@ export function parseReporterWork(json) {
   const items = [];
   for (const edge of field.edges) {
     const node = edge?.node;
-    if (!node || typeof node.title !== 'string') continue;
-    items.push({ id: typeof node.id === 'string' ? node.id : null, title: node.title, status: node.status?.name ?? null, type: node.__typename ?? null });
+    // The live schema has NO `title` on JiraWorkItem (23 Nov 2026, read from
+    // the SDL): the display name is `summary`, the issue key is `key`.
+    // `title` only exists on JiraWorkItemRemoteLink — the docs example was
+    // wrong for this type. Nodes without a summary are skipped.
+    if (!node || typeof node.summary !== 'string') continue;
+    items.push({ id: typeof node.id === 'string' ? node.id : null, key: typeof node.key === 'string' ? node.key : null, title: node.summary, status: node.status?.name ?? null, type: node.__typename ?? null });
   }
   return { items, hasNextPage: field.pageInfo?.hasNextPage === true, reason: items.length === 0 ? 'reporter has no other work items' : null };
 }
