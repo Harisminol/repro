@@ -39,6 +39,9 @@ TOOLS (6): parse-report, find-duplicates, score-severity, missing-evidence, rout
 SCORE-SEVERITY RESULT: { ... band High, confidence Medium ... }
 SMOKE TEST PASSED.
 ```
+(Forge suffixes the tool names with the install environment, so on the
+dev install the list reads `parse-report_development`, … — the script
+resolves the real name from `tools/list` instead of hardcoding it.)
 
 ## What it proves
 

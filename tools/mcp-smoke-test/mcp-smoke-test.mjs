@@ -125,8 +125,14 @@ async function main() {
   await client.connect(transport);
   const tools = await client.listTools();
   console.log(`TOOLS (${tools.tools.length}): ${tools.tools.map((t) => t.name).join(', ')}`);
+  // Forge suffixes MCP tool names with the install environment
+  // (e.g. `_development` on the dev install, no suffix on production),
+  // so resolve the real name from tools/list instead of hardcoding it.
+  const scoreTool = tools.tools.find((t) => t.name === 'score-severity' || t.name.startsWith('score-severity_'));
+  if (!scoreTool) throw new Error('score-severity tool not listed by the MCP server');
+  console.log(`Calling ${scoreTool.name} …`);
   const result = await client.callTool({
-    name: 'score-severity',
+    name: scoreTool.name,
     arguments: { reportText: SAMPLE_REPORT },
   });
   console.log('SCORE-SEVERITY RESULT:');
