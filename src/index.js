@@ -15,9 +15,14 @@
 // rubric.js, with the project lead as fallback.
 
 import api, { route } from '@forge/api';
-import Resolver from '@forge/resolver';
-import { adfToText, findDuplicates as scoreDuplicates, missingEvidence as listMissingEvidence, parseReport as parseReportText, scoreSeverity as scoreReportSeverity, triageReport } from './triage.js';
-import { COMPONENT_TEAMS } from './rubric.js';
+import _Resolver from '@forge/resolver';
+// @forge/resolver is CommonJS (exports.default = Resolver). With some bundler
+// interop settings the default import lands as the module namespace object
+// instead of the class ("resolver_out_namespaceObject is not a constructor",
+// panel error 22 Nov 2026) — resolve the class defensively either way.
+const Resolver = _Resolver.default ?? _Resolver;
+import { adfToText, findDuplicates as scoreDuplicates, missingEvidence as listMissingEvidence, parseReport as parseReportText, scoreSeverity as scoreReportSeverity, triageReport } from './triage.mjs';
+import { COMPONENT_TEAMS } from './rubric.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers

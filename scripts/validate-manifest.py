@@ -33,13 +33,15 @@ panel = modules["jira:issuePanel"][0]
 resource_keys = {r["key"] for r in manifest.get("resources", [])}
 scopes = manifest["permissions"]["scopes"]
 
-# 1. Actions reference existing functions, are GET-only, inputs required:false.
+# 1. Actions reference existing functions, are GET-only, inputs have
+# title/description/type (ActionInput schema per forge lint, 22 Nov 2026 —
+# 'required: false' is NOT a schema property and was removed).
 for a in modules.get("action", []):
     check(a["function"] in fn_keys, f"action {a['key']} references missing function {a['function']}")
     check(a.get("actionVerb") == "GET", f"action {a['key']} is not GET")
     for name, spec in (a.get("inputs") or {}).items():
-        check(spec.get("required") is False, f"action {a['key']} input {name} is not required:false")
-        check("type" in spec and "description" in spec, f"action {a['key']} input {name} lacks type/description")
+        check("title" in spec and "description" in spec and "type" in spec, f"action {a['key']} input {name} lacks title/description/type")
+        check("required" not in spec, f"action {a['key']} input {name} has non-schema 'required'")
 
 # 2. Agent references existing actions/skills; name <= 30 chars.
 check(agent["name"] and len(agent["name"]) <= 30, f"agent name > 30 chars: {agent['name']}")
@@ -101,12 +103,13 @@ for dirpath, _, files in os.walk(skill_dir):
         total += os.path.getsize(os.path.join(dirpath, fn))
 check(total < 100 * 1024 * 1024, "skill dir over 100 MB")
 
-# 9. Scopes: read-only only, <= 50.
+# 9. Scopes: read-only only, <= 50. ('search:jira' is NOT a real scope —
+# forge lint, 22 Nov 2026 — JQL search uses 'read:jql:jira'.)
 check(len(scopes) <= 50, "over the 50-scope cap")
 for s in scopes:
-    check(s.startswith(("read:", "search:")), f"non-read scope: {s}")
+    check(s.startswith("read:"), f"non-read scope: {s}")
 
-# 10. Runtime + app id placeholder present.
+# 10. Runtime + real app id (registered 22 Nov 2026).
 check(manifest["app"]["runtime"]["name"] == "nodejs24.x", "runtime must be nodejs24.x")
 check(manifest["app"].get("id", "").startswith("ari:cloud:ecosystem::app/"), "app id missing")
 

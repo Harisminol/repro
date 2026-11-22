@@ -6,7 +6,7 @@
 // Pipeline: parseReport -> scoreSeverity -> missingEvidence -> findDuplicates
 // -> routeOwner. triageReport() runs the whole pipeline for the issue panel.
 
-import { BANDS, COMPONENT_KEYWORDS, EVIDENCE_CHECKLIST, IMPACT_CLASSES } from './rubric.js';
+import { BANDS, COMPONENT_KEYWORDS, EVIDENCE_CHECKLIST, IMPACT_CLASSES } from './rubric.mjs';
 
 const VERSION_RE = /\bv?(\d+\.\d+(?:\.\d+)?(?:-[0-9A-Za-z.-]+)?)\b/g;
 const URL_PATH_RE = /(?:^|[\s"'`])(?:https?:\/\/[^\s)>\]]+?)?(\/(?:api|v\d+|admin|auth|login|checkout|users?|account)[/\w.\-]*)/gi;

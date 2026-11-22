@@ -2,7 +2,7 @@
 // Run: npm test   (node --test test/)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { adfToText, findDuplicates, missingEvidence, parseReport, routeOwner, scoreSeverity, triageReport } from '../src/triage.js';
+import { adfToText, findDuplicates, missingEvidence, parseReport, routeOwner, scoreSeverity, triageReport } from '../src/triage.mjs';
 
 // Demo report A — the vague one. Same bug as B, no evidence.
 const VAGUE_REPORT = `URGENT!!! Login is broken, CRITICAL vulnerability. Anyone can get in.
