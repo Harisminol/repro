@@ -68,8 +68,11 @@ async function searchCandidates(parsed, maxResults = 10) {
   const jql = terms
     .map((t) => `text ~ "${String(t).replace(/["\\]/g, '')}"`)
     .join(' OR ');
-  const url = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,description,components,labels`;
-  const res = await api.asUser().requestJira(url);
+  // NOTE: requestJira REQUIRES the URL to be built with the `route` tag from
+  // '@forge/api' — a plain string throws "You must create your route using
+  // the 'route' export" (panel error, 22 Nov 2026). The tag encodes
+  // interpolated query values itself, so pass the RAW jql (no pre-encoding).
+  const res = await api.asUser().requestJira(route`/rest/api/3/search/jql?jql=${jql}&maxResults=${maxResults}&fields=summary,description,components,labels`);
   if (!res.ok) return [];
   const data = await res.json();
   return (data.issues || []).map((issue) => ({
