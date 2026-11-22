@@ -8,8 +8,14 @@ mkdir -p "$XDG_CONFIG_HOME"
 forge settings set usage-analytics false >/dev/null 2>&1 || true
 
 echo "== 1/5 Login Forge =="
-read -r -s -p "Tempel API token Atlassian lalu tekan Enter: " FORGE_TOKEN
-echo
+# Pakai token dari env bila sudah ada (Terminal 4 codespace sudah menyimpannya),
+# kalau tidak, minta tempel sekali (tidak tampil di layar — normal).
+if [ -n "${FORGE_API_TOKEN:-}" ]; then
+  FORGE_TOKEN="$FORGE_API_TOKEN"
+else
+  read -r -s -p "Tempel API token Atlassian lalu tekan Enter: " FORGE_TOKEN
+  echo
+fi
 forge login -u "haris.minol@gmail.com" -t "$FORGE_TOKEN" --non-interactive
 unset FORGE_TOKEN
 forge whoami
@@ -24,7 +30,7 @@ echo "== 4/5 Deploy (development) =="
 forge deploy -e development --non-interactive
 
 echo "== 5/5 Install ke situs demo =="
-forge install --site harisminol-dev.atlassian.net -p Jira --non-interactive --confirm-scopes
+forge install --site harisminol-dev.atlassian.net -p Jira -e development --non-interactive --confirm-scopes
 
 echo
 echo "== SELESAI =="
