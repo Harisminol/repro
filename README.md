@@ -126,7 +126,7 @@ component map — TWG never blocks triage.
 
 ## Deploy dari HP (GitHub Codespaces)
 
-Tanpa laptop: buka repo ini di GitHub → **Code → Codespaces → Create codespace on main**
+Tanpa laptop: buka repo ini di GitHub → **Code → Codespaces → Create codespace on the default branch**
 (mesin 2-core; akun GitHub Free sudah termasuk 120 core-hours/bulan — deploy cuma butuh 1–2 jam).
 Forge CLI ter-install otomatis saat codespace dibuat.
 
