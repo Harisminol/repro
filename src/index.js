@@ -98,7 +98,7 @@ export async function findDuplicates(event) {
   const { text, issueKey } = await reportFrom(event);
   const parsed = parseReportText(text);
   const candidates = await searchCandidates(parsed);
-  const duplicates = scoreDuplicates(parsed, candidates);
+  const duplicates = scoreDuplicates(parsed, candidates, issueKey);
   return { issueKey, component: parsed.component, impactClasses: parsed.impactClasses.map((c) => c.id), duplicates };
 }
 
@@ -176,7 +176,7 @@ resolver.define('getTriage', async ({ payload }) => {
   const issue = await fetchIssue(String(issueKey));
   const text = issueText(issue);
   const candidates = await searchCandidates(parseReportText(text));
-  const report = triageReport(text, candidates);
+  const report = triageReport(text, candidates, String(issueKey));
   return {
     issueKey: String(issueKey),
     summary: issue.fields?.summary || '',

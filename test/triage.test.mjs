@@ -116,6 +116,19 @@ test('dedup: the vague report matches nothing', () => {
   assert.equal(dups.length, 0);
 });
 
+test('dedup: an issue is never a duplicate of itself', () => {
+  // SEC-1 is the issue being triaged; the JQL search returns it too.
+  const self = { key: 'SEC-1', summary: 'Avatar upload SSRF to internal metadata endpoint', description: 'SSRF via avatar URL field, version 4.2.1', components: ['upload'], labels: [] };
+  const parsed = parseReport(REPRO_REPORT);
+  const dups = findDuplicates(parsed, [self, ...KNOWN_ISSUES], 'SEC-1');
+  assert.ok(!dups.some((d) => d.key === 'SEC-1'));
+  assert.equal(dups[0].key, 'SEC-88');
+  assert.equal(dups[0].verdict, 'likely');
+  const report = triageReport(REPRO_REPORT, [self, ...KNOWN_ISSUES], 'SEC-1');
+  assert.ok(!report.summary.includes('SEC-1'));
+  assert.equal(report.duplicates[0].key, 'SEC-88');
+});
+
 test('routing: upload component routes to the Media team', () => {
   const parsed = parseReport(REPRO_REPORT);
   const routing = routeOwner(parsed);

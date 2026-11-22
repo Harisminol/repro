@@ -331,9 +331,13 @@ export function missingEvidence(parsed, severity) {
 // 4. Dedup against existing Jira issues.
 // ---------------------------------------------------------------------------
 
-export function findDuplicates(parsed, issues) {
+export function findDuplicates(parsed, issues, selfKey) {
   const reportTokens = new Set(tokenize(parsed.rawText));
-  const scored = (issues || []).map((issue) => {
+  // Never flag an issue as a duplicate of itself: the JQL search returns
+  // the issue being triaged too (SEC-1 flagged itself, 22 Nov 2026).
+  const scored = (issues || [])
+    .filter((issue) => issue.key !== selfKey)
+    .map((issue) => {
     const haystack = [issue.summary || '', issue.description || '', (issue.components || []).join(' '), (issue.labels || []).join(' ')].join(' ').toLowerCase();
     let score = 0;
     const reasons = [];
@@ -409,11 +413,11 @@ export function routeOwner(parsed) {
 // Full pipeline (used by the issue panel resolver).
 // ---------------------------------------------------------------------------
 
-export function triageReport(rawText, knownIssues) {
+export function triageReport(rawText, knownIssues, selfKey) {
   const parsed = parseReport(rawText);
   const severity = scoreSeverity(parsed);
   const missing = missingEvidence(parsed, severity);
-  const duplicates = findDuplicates(parsed, knownIssues || []);
+  const duplicates = findDuplicates(parsed, knownIssues || [], selfKey);
   const routing = routeOwner(parsed);
   const likelyDuplicate = duplicates.some((d) => d.verdict === 'likely');
   return {
