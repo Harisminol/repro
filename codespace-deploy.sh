@@ -21,7 +21,15 @@ unset FORGE_TOKEN
 forge whoami
 
 echo "== 2/5 Register app =="
-forge register repro -y || forge register repro || echo "(register dilewati — mungkin app sudah terdaftar)"
+# Idempotent: register ONLY when the manifest still holds the placeholder id.
+# Re-running `forge register` on an already-registered app creates a SECOND
+# app (22 Nov 2026: a duplicate install shadowed the fixed one in Jira).
+APP_ID=$(grep -E 'id: ari:cloud:ecosystem::app/' manifest.yml | awk '{print $2}' || true)
+if [ -z "$APP_ID" ] || [ "$APP_ID" = "ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000" ]; then
+  forge register repro -y || forge register repro || echo "(register dilewati — mungkin app sudah terdaftar)"
+else
+  echo "(app sudah terdaftar: $APP_ID — register dilewati)"
+fi
 
 echo "== 3/5 Lint =="
 forge lint
