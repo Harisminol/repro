@@ -9,41 +9,15 @@
 // the action inputs; getInput() also checks payload/input wrappers so the
 // handlers stay robust across invocation paths).
 //
-// Teamwork Graph: routing via TWG is OPTIONAL and OFF by default
-// (TWG_ENABLED = false). The app routes from the component->team table in
-// rubric.js and falls back to the project lead. To enable TWG routing:
-//   1. Verify a curated query in the TWG query builder
-//      (https://teamwork-graph.atlassian.com/query-builder) and paste it
-//      into TWG_QUERY below.
-//   2. Add the scopes read:graph:issue:jira, read:graph:team:atlassian and
-//      read:graph:user:atlassian to manifest.yml (needs an org admin grant
-//      at install time) and set TWG_ENABLED = true.
-//   3. If TWG returns empty data, routing degrades to the component map —
-//      TWG never blocks the app (missing scopes fail silently on TWG).
+// Teamwork Graph routing was REMOVED on 22 Nov 2026: the hook was dead code
+// behind a disabled flag and its mere presence triggered a forge lint
+// warning (teamwork-graph-scopes). Routing is the component->team table in
+// rubric.js, with the project lead as fallback.
 
 import api, { route } from '@forge/api';
 import Resolver from '@forge/resolver';
 import { adfToText, findDuplicates as scoreDuplicates, missingEvidence as listMissingEvidence, parseReport as parseReportText, scoreSeverity as scoreReportSeverity, triageReport } from './triage.js';
 import { COMPONENT_TEAMS } from './rubric.js';
-
-// ---------------------------------------------------------------------------
-// Teamwork Graph hook (disabled until a curated query is verified).
-// ---------------------------------------------------------------------------
-
-const TWG_ENABLED = false;
-const TWG_QUERY = null; // TODO: paste a verified curated query here before enabling.
-
-async function tryTeamworkGraphRouting(component) {
-  if (!TWG_ENABLED || !TWG_QUERY) return null;
-  try {
-    const result = await api.asUser().requestTeamworkGraph(TWG_QUERY, { component });
-    const teams = result?.data?.teams || result?.teams || [];
-    if (!teams.length) return null; // empty = scopes missing or no match; degrade gracefully
-    return { team: teams[0].name || teams[0].displayName, source: 'teamwork-graph' };
-  } catch {
-    return null; // TWG must never break triage
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -161,9 +135,6 @@ export async function routeOwner(event) {
     throw new Error('Provide component, or issueKey to derive it from the report.');
   }
   const resolvedComponent = component || parsed.component;
-
-  const twg = resolvedComponent ? await tryTeamworkGraphRouting(resolvedComponent) : null;
-  if (twg) return { component: resolvedComponent, team: twg.team, source: 'teamwork-graph', reason: 'Owning team resolved via Teamwork Graph.' };
 
   if (resolvedComponent && COMPONENT_TEAMS[resolvedComponent]) {
     return { component: resolvedComponent, team: COMPONENT_TEAMS[resolvedComponent], source: 'component-map', reason: `Component "${resolvedComponent}" maps to the ${COMPONENT_TEAMS[resolvedComponent]} team.` };

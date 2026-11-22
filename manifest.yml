@@ -20,13 +20,13 @@ modules:
       actionVerb: GET
       inputs:
         reportText:
+          title: Report text
           type: string
           description: The full text of the security report. Omit when issueKey is given instead.
-          required: false
         issueKey:
+          title: Issue key
           type: string
           description: Key of the Jira issue holding the report, e.g. SEC-123.
-          required: false
     - key: find-duplicates
       name: Find duplicate issues
       description: Search existing Jira issues for likely duplicates of a security report, scored by component, impact class, version, and keyword overlap.
@@ -34,13 +34,13 @@ modules:
       actionVerb: GET
       inputs:
         reportText:
+          title: Report text
           type: string
           description: The full text of the security report. Omit when issueKey is given instead.
-          required: false
         issueKey:
+          title: Issue key
           type: string
           description: Key of the Jira issue holding the report, e.g. SEC-123.
-          required: false
     - key: score-severity
       name: Score report severity
       description: Score a security report with the transparent team rubric. Every factor cites the exact report text it rests on, and the result carries a confidence level and an escalation recommendation.
@@ -48,13 +48,13 @@ modules:
       actionVerb: GET
       inputs:
         reportText:
+          title: Report text
           type: string
           description: The full text of the security report. Omit when issueKey is given instead.
-          required: false
         issueKey:
+          title: Issue key
           type: string
           description: Key of the Jira issue holding the report, e.g. SEC-123.
-          required: false
     - key: missing-evidence
       name: List missing evidence
       description: List exactly what reproduction evidence is still missing from a security report, as a checklist, marking which items block escalation.
@@ -62,31 +62,31 @@ modules:
       actionVerb: GET
       inputs:
         reportText:
+          title: Report text
           type: string
           description: The full text of the security report. Omit when issueKey is given instead.
-          required: false
         issueKey:
+          title: Issue key
           type: string
           description: Key of the Jira issue holding the report, e.g. SEC-123.
-          required: false
     - key: route-owner
       name: Route to owning team
-      description: Find the owning team for a report's affected component, from the team-configurable component table (Teamwork Graph when enabled, project lead as a last fallback).
+      description: Find the owning team for a report's affected component, from the team-configurable component table (project lead as a last fallback).
       function: route-owner-fn
       actionVerb: GET
       inputs:
         component:
+          title: Component
           type: string
           description: Affected component, e.g. login or checkout. Omit when issueKey is given instead.
-          required: false
         issueKey:
+          title: Issue key
           type: string
           description: Key of the Jira issue holding the report, e.g. SEC-123.
-          required: false
         projectKey:
+          title: Project key
           type: string
           description: Project key used for the project-lead fallback, e.g. SEC.
-          required: false
   rovo:agent:
     - key: repro-triage-agent
       name: Repro Triage Agent
@@ -131,6 +131,7 @@ modules:
         function: panel-resolver-fn
       render: native
       title: Repro triage
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
 resources:
   # The agent prompt is read from this directory by the manifest
   # interpolator: `prompt: resource:repro-prompt;prompt.txt`.
@@ -141,18 +142,16 @@ resources:
 permissions:
   scopes:
     # Minimal read-only set. Every scope is used by a handler in src/index.js.
-    # Teamwork Graph scopes are deliberately NOT listed: routing works from
-    # the component table without them. To enable TWG routing, add
-    # read:graph:issue:jira, read:graph:team:atlassian and
-    # read:graph:user:atlassian here (needs an org admin grant at install)
-    # and flip TWG_ENABLED on in src/index.js after verifying a curated
-    # query in the TWG query builder.
+    # 'search:jira' is NOT a real scope (lint, 22 Nov 2026) — JQL search uses
+    # 'read:jql:jira'. Teamwork Graph routing was removed entirely on
+    # 22 Nov 2026 (dead code, triggered a lint warning); routing is the
+    # component table in rubric.js with the project lead as fallback.
     - read:jira-work
     - read:jira-user
-    - search:jira
+    - read:jql:jira
 app:
   runtime:
     name: nodejs24.x
-  # App ID is assigned by `forge create` (or `forge register` for a
-  # manually scaffolded app). Placeholder until registration runs.
-  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
+  # App ID assigned by `forge register` on 22 Nov 2026 in the Codespace
+  # (Developer Space 'harisminol').
+  id: ari:cloud:ecosystem::app/2888884b-3f90-44fc-acc0-bbd9335d73fc
