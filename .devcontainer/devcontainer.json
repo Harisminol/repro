@@ -1,0 +1,1 @@
+{"image":"mcr.microsoft.com/devcontainers/universal:2","name":"Repro — Forge (Codegeist)","postCreateCommand":"sudo npm install -g @forge/cli@15.1.0 && npm ci && mkdir -p /tmp/forge-config && export XDG_CONFIG_HOME=/tmp/forge-config && forge settings set usage-analytics false || true","remoteEnv":{"XDG_CONFIG_HOME":"/tmp/forge-config"}}
