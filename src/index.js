@@ -212,13 +212,21 @@ resolver.define('getTriage', async ({ payload }) => {
   const report = triageReport(text, candidates, String(issueKey));
   // Teamwork Graph context is best-effort: a graph failure must never
   // break the panel, so it is caught and reported as unavailable.
+  // A GraphQL-level error (or an unparseable response) is also "unavailable",
+  // never silently shown as "no other reports" — the two look identical in
+  // the panel otherwise, and an empty result must mean the graph really
+  // returned zero items.
   let graph = { available: false, items: [], error: 'not attempted' };
   try {
     const reporter = issue.fields?.reporter;
     if (reporter?.accountId) {
       const result = await fetchReporterWork(api, reporter.accountId);
       const items = result.items.filter((it) => it.title !== (issue.fields?.summary || ''));
-      graph = { available: result.available, reporterName: reporter.displayName || null, items, error: result.error || null };
+      const failed = !result.available || (typeof result.error === 'string' && /^(graph error:|HTTP|empty response)/.test(result.error));
+      console.log(`[repro twg] issue=${issueKey} reporter=${reporter.accountId} available=${result.available} rawItems=${result.items.length} shownItems=${items.length} error=${result.error || 'none'}`);
+      graph = failed
+        ? { available: false, reporterName: reporter.displayName || null, items: [], error: result.error || 'graph returned no usable data' }
+        : { available: true, reporterName: reporter.displayName || null, items, error: null };
     } else {
       graph = { available: false, items: [], error: 'no reporter on issue' };
     }

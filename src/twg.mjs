@@ -16,6 +16,7 @@ export const REPORTER_WORK_QUERY = `query repro_reporterWork($userId: ID!) {
   atlassianUserReportedJiraWorkItems(userId: $userId, first: 25) {
     edges {
       node {
+        __typename
         ... on JiraWorkItem {
           id
           title
@@ -51,7 +52,7 @@ export function parseReporterWork(json) {
   for (const edge of field.edges) {
     const node = edge?.node;
     if (!node || typeof node.title !== 'string') continue;
-    items.push({ id: typeof node.id === 'string' ? node.id : null, title: node.title, status: node.status?.name ?? null });
+    items.push({ id: typeof node.id === 'string' ? node.id : null, title: node.title, status: node.status?.name ?? null, type: node.__typename ?? null });
   }
   return { items, hasNextPage: field.pageInfo?.hasNextPage === true, reason: items.length === 0 ? 'reporter has no other work items' : null };
 }

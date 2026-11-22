@@ -174,7 +174,7 @@ test('adfToText flattens an issue description', () => {
 });
 
 // --- Teamwork Graph response parsing (src/twg.mjs). No Forge, no network.
-import { parseReporterWork, userAri, REPORTER_WORK_OPERATION } from '../src/twg.mjs';
+import { parseReporterWork, userAri, REPORTER_WORK_OPERATION, REPORTER_WORK_QUERY } from '../src/twg.mjs';
 
 test('twg: operation name follows the company_operation rule', () => {
   const [company, op] = REPORTER_WORK_OPERATION.split('_');
@@ -216,4 +216,9 @@ test('twg: parseReporterWork tolerates empty and error shapes', () => {
   assert.match(err.reason, /missing scope/);
   const noTitle = parseReporterWork({ data: { atlassianUserReportedJiraWorkItems: { edges: [{ node: { id: 'x' } }] } } });
   assert.deepEqual(noTitle.items, []);
+});
+
+test('twg: query selects __typename so the node type is visible', () => {
+  assert.ok(REPORTER_WORK_QUERY.includes('__typename'));
+  assert.ok(REPORTER_WORK_QUERY.includes('atlassianUserReportedJiraWorkItems'));
 });

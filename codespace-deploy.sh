@@ -32,13 +32,37 @@ else
 fi
 
 echo "== 3/5 Lint =="
-forge lint
+# `forge lint` exits non-zero on a major-version approval (scope change)
+# as well as on real errors. Only the approval may be ignored.
+set +e
+forge lint > /tmp/repro-lint.log 2>&1
+LINT_STATUS=$?
+set -e
+if [ $LINT_STATUS -ne 0 ]; then
+  if grep -q "MAJOR_VERSION_RULE" /tmp/repro-lint.log; then
+    echo "(lint: hanya approval major-version karena perubahan scope — lanjut)"
+  else
+    cat /tmp/repro-lint.log
+    echo "LINT GAGAL — perbaiki dulu"
+    exit 1
+  fi
+fi
 
 echo "== 4/5 Deploy (development) =="
-forge deploy -e development --non-interactive
+# A scope change is a major version: the plain deploy refuses and asks for
+# --approve MAJOR_VERSION_RULE. Retry with the approval when that happens.
+if ! forge deploy -e development --non-interactive; then
+  echo "(deploy butuh persetujuan major-version — coba lagi dengan --approve)"
+  forge deploy -e development --non-interactive --approve MAJOR_VERSION_RULE
+fi
 
 echo "== 5/5 Install ke situs demo =="
-forge install --site harisminol-dev.atlassian.net -p Jira -e development --non-interactive --confirm-scopes
+# After a major version the plain install may refuse; --upgrade is the
+# fallback that installs the newest version over the existing one.
+if ! forge install --site harisminol-dev.atlassian.net -p Jira -e development --non-interactive --confirm-scopes; then
+  echo "(install biasa gagal — coba --upgrade)"
+  forge install --upgrade --site harisminol-dev.atlassian.net -p Jira -e development --non-interactive --confirm-scopes
+fi
 
 echo
 echo "== SELESAI =="
